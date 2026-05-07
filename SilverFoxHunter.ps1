@@ -2,7 +2,7 @@
 
 .SYNOPSIS
 
-    银狐木马(SilverFox)检测查杀工具 v2.9.0（纯命令行版）
+    银狐木马(SilverFox)检测查杀工具 v2.9.1（纯命令行版）
 
 .DESCRIPTION
 
@@ -506,7 +506,12 @@ $Script:KnownSoftwareSet = [System.Collections.Generic.HashSet[string]]::new([Sy
 
     "netease","logitech","bilibili","onedrive","fortinet",
 
-    "ekrn","ekrnepfw"
+    "ekrn","ekrnepfw",
+    # 常见开发/浏览器/工具软件（Program Files 顶层目录名，防6层随机目录误报）
+    "dotnet","nodejs","npm","nvm","google","chrome","chromium",
+    "quark","quarkupdater","mozilla","mozilla firefox","microsoft",
+    "vmware","wsl","openvpn","tailscale","nmap","wireshark",
+    "everything","cpu-z","gpu-z","hwinfo","msi afterburner"
 
 ) | ForEach-Object { $Script:KnownSoftwareSet.Add($_) | Out-Null }
 
@@ -584,7 +589,16 @@ $Script:WinServiceNameSet = [System.Collections.Generic.HashSet[string]]::new([S
     # NVIDIA 服务
     "NVDisplay.ContainerLocalSystem","NvContainerLocalSystem","NVWMI",
     # AMD 服务
-    "amdkmdag","amdwddmg","amdfendr"
+    "amdkmdag","amdwddmg","amdfendr",
+    # VMware 服务
+    "VMnetDHCP","VMUSBArbService","VMwareHostd","VMAuthdService",
+    "VMnetuserif","vmnetbridge","VMUpgradeHelper","VMTools","VMnetAdapter",
+    # WSL 服务
+    "WSLService","wslservice","LxssManager",
+    # 夸克浏览器
+    "QuarkUpdater","QuarkBrowser",
+    # 火绒安全
+    "HipsDaemon","HipsTray","hipslog","WsCtrl","usysdiag"
 
 ) | ForEach-Object { $Script:WinServiceNameSet.Add($_) | Out-Null }
 
@@ -5148,9 +5162,9 @@ function Invoke-PipeCheck {
 
 
 
-            # 跳过常见命名模式（进程间通信管道）
+            # 跳过常见命名模式（进程间通信管道 + 知名软件管道前缀）
 
-            if ($pipeName -match '^(pipe|crashpad|mojo|chrome|edge|firefox|discord|slack|teams)') { continue }
+            if ($pipeName -match '^(pipe|crashpad|mojo|chrome|edge|firefox|discord|slack|teams|wecom|wxwork|tencent|wps|qing|elive|recentfile|workbuddy|pshost|rp)') { continue }
 
             if ($pipeName -match '^\d+$') { continue }  # 纯数字管道（PID）
 
@@ -5192,7 +5206,7 @@ function Invoke-PipeCheck {
 
 
 
-            # 检查是否有可疑关键词
+            # 检查是否有可疑关键词（\b词边界防子串误匹配：Administrator≠rat, powershell≠shell, hex_c2≠c2）
 
             $pipeLower = $pipeName.ToLower()
 
@@ -5200,7 +5214,7 @@ function Invoke-PipeCheck {
 
             foreach ($kw in $susKeywords) {
 
-                if ($pipeLower -match $kw) {
+                if ($pipeLower -match "\b$kw\b") {
 
                     $suspicionScore += 5
 
@@ -6148,7 +6162,7 @@ body{font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:#0a0e27;colo
 
 <h1>银狐木马检测报告</h1>
 
-<div class="subtitle">SilverFox (Silver Fox) Trojan Detection Report v2.9.0</div>
+<div class="subtitle">SilverFox (Silver Fox) Trojan Detection Report v2.9.1</div>
 
 <div class="meta">
 
@@ -6460,7 +6474,7 @@ $recommendationsHtml
 
 </div>
 
-<div class="footer"><p>银狐木马检测查杀工具 v2.9.0 | 生成时间：$($Script:ScanTime)</p><p>本工具仅供安全检测与应急响应使用，清理操作请谨慎执行</p></div>
+<div class="footer"><p>银狐木马检测查杀工具 v2.9.1 | 生成时间：$($Script:ScanTime)</p><p>本工具仅供安全检测与应急响应使用，清理操作请谨慎执行</p></div>
 
 </div>
 
@@ -6520,7 +6534,7 @@ function Main {
 
     Write-Host "  =======================================================" -ForegroundColor Cyan
 
-    Write-Host "  |  银狐木马检测查杀工具 v2.9.0  (命令行版)           |" -ForegroundColor Cyan
+    Write-Host "  |  银狐木马检测查杀工具 v2.9.1  (命令行版)           |" -ForegroundColor Cyan
 
     Write-Host "  |  SilverFox Trojan Detection & Removal               |" -ForegroundColor Cyan
 

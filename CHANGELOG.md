@@ -1,5 +1,14 @@
 # 更新日志
 
+## [v2.9.1] - 2026-05-07
+
+### 误报修复（严重）
+- **管道关键词子串误匹配** — `-match "rat"` 匹配到 **Administrat**or**（几乎所有 Windows 命名管道都含用户名），导致 12/18 管道误报为高危；`-match "c2"` 匹配 hex hash `...ec2`；`-match "shell"` 匹配 power**shell**。全部改为 `"\b$kw\b"` 词边界正则匹配
+- **6层随机目录—知名软件目录** — `dotnet`/`nodejs`/`Google`/`QuarkUpdater` 不在 KnownSoftwareSet，被误判为银狐持久化目录。新增 20+ 知名软件名到 KnownSoftwareSet
+- **管道前缀白名单** — 新增 `wecom|wxwork|tencent|wps|qing|elive|recentfile|workbuddy|pshost|rp` 前缀跳过，覆盖企业微信、WPS、青办公、联想、火绒等软件管道
+- **服务名白名单** — WinServiceNameSet 新增 VMware 服务（VMnetDHCP/VMUSBArbService 等）、WSL 服务、夸克浏览器、火绒安全 16 个服务名
+
+---
 ## [v2.9.0] - 2026-05-06
 
 ### 新增
