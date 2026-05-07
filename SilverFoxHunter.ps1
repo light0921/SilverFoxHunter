@@ -2027,13 +2027,9 @@ function Invoke-RegistryCheck {
                     
 
                     Add-Result -Category "Registry" -Title "可疑启动项: $name" `
-
                         -Detail "值: $value`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                         -RiskLevel $riskLevel -Location $keyPath `
-
                         -Remediation "删除该启动项并检查对应文件" `
-
                         -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $keyPath -FixRegName $name
 
                 }
@@ -2073,11 +2069,8 @@ function Invoke-RegistryCheck {
                     if ((Test-IsLegitimatePath $dbg).IsLegit) { return }
 
                     Add-Result -Category "Registry" -Title "映像劫持: $($_.PSChildName)" `
-
                         -Detail "Debugger: $dbg" -RiskLevel "High" -Location $_.PSPath `
-
                         -Remediation "检查该映像劫持是否正常，删除Debugger键值" `
-
                         -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $_.PSPath -FixRegName "Debugger"
 
                 }
@@ -2109,13 +2102,9 @@ function Invoke-RegistryCheck {
             if ($userInitVal) {
 
                 Add-Result -Category "Registry" -Title "UserInitMprLogonScript持��化" `
-
                     -Detail "值: $userInitVal`n该键在用户登录时执行任意脚本，是银狐木马新型持久化技术" `
-
                     -RiskLevel "Critical" -Location $userInitPath `
-
                     -Remediation "删除HKCU:\Environment\UserInitMprLogonScript键值，检查脚本内容确认是否为恶意" `
-
                     -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $userInitPath -FixRegName "UserInitMprLogonScript"
 
             }
@@ -2173,13 +2162,9 @@ function Invoke-RegistryCheck {
                 if ($suspicious) {
 
                     Add-Result -Category "Registry" -Title "PendingFileRenameOperations自删除/替换" `
-
                         -Detail "值: $pfroVal`n该键在重启时执行文件替换/删除操作，银狐常用于自删除或劫持系统文件" `
-
                         -RiskLevel "High" -Location $pfroPath `
-
                         -Remediation "将PendingFileRenameOperations置空（需重启生效），检查被操作的文件是否为恶意" `
-
                         -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $pfroPath -FixRegName "PendingFileRenameOperations"
 
                 }
@@ -2233,13 +2218,9 @@ function Invoke-RegistryCheck {
                     if ($suspiciousTarget) {
 
                         Add-Result -Category "Registry" -Title "DOS Devices虚拟盘符: $devName" `
-
                             -Detail "设备: $devName -> $devTarget`n虚拟盘符映射到可疑目录，是银狐木马新型持久化/隐藏技术" `
-
                             -RiskLevel "High" -Location $dosDevPath `
-
                             -Remediation "删除该DOS Devices项，检查映射目录中的文件是否为恶意" `
-
                             -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $dosDevPath -FixRegName $devName
 
                     }
@@ -2281,13 +2262,9 @@ function Invoke-RegistryCheck {
                 if (-not (Test-IsLegitimatePath $shellExe).IsLegit) {
 
                     Add-Result -Category "Registry" -Title "Winlogon Shell异常" `
-
                         -Detail "Shell: $shell`n正常应为 explorer.exe，当前值可能被银狐木马替换" `
-
                         -RiskLevel "Critical" -Location $winlogonPath `
-
                         -Remediation "将Shell值恢复为 explorer.exe" `
-
                         -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $winlogonPath -FixRegName "Shell"
 
                 }
@@ -2311,25 +2288,17 @@ function Invoke-RegistryCheck {
                     if ($userinit -match '\.(bat|cmd|vbs|ps1|js)') {
 
                         Add-Result -Category "Registry" -Title "Winlogon Userinit脚本注入" `
-
                             -Detail "Userinit: $userinit`n正常应为 userinit.exe，当前包含脚本执行" `
-
                             -RiskLevel "Critical" -Location $winlogonPath `
-
                             -Remediation "将Userinit值恢复为 C:\Windows\system32\userinit.exe," `
-
                             -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $winlogonPath -FixRegName "Userinit"
 
                     } elseif ($userinit -notmatch 'userinit\.exe') {
 
                         Add-Result -Category "Registry" -Title "Winlogon Userinit异常" `
-
                             -Detail "Userinit: $userinit`n正常应为 userinit.exe，当前值可能被篡改" `
-
                             -RiskLevel "High" -Location $winlogonPath `
-
                             -Remediation "检查Userinit值，恢复为默认值" `
-
                             -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $winlogonPath -FixRegName "Userinit"
 
                     }
@@ -2353,13 +2322,9 @@ function Invoke-RegistryCheck {
                     if ($notifyDll -and -not (Test-IsLegitimatePath $notifyDll).IsLegit) {
 
                         Add-Result -Category "Registry" -Title "Winlogon Notify可疑DLL" `
-
                             -Detail "Notify: $notify`nDLL: $notifyDll`nGINA通知包可能被银狐注入" `
-
                             -RiskLevel "Critical" -Location $notifyPath `
-
                             -Remediation "删除该Notify项，检查DLL是否为恶意" `
-
                             -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $winlogonPath -FixRegName "Notify"
 
                     }
@@ -2403,13 +2368,9 @@ function Invoke-RegistryCheck {
                     if (-not (Test-IsLegitimatePath $dllClean).IsLegit) {
 
                         Add-Result -Category "Registry" -Title "AppInit_DLLs可疑DLL" `
-
                             -Detail "AppInit_DLLs: $appInitDlls`n可疑DLL: $dllClean`nAppInit_DLLs会被所有加载user32.dll的进程加载，银狐可用于全局注入" `
-
                             -RiskLevel "Critical" -Location $appInitPath `
-
                             -Remediation "清空AppInit_DLLs值，检查对应DLL是否为恶意" `
-
                             -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $appInitPath -FixRegName "AppInit_DLLs"
 
                     }
@@ -2455,13 +2416,9 @@ function Invoke-RegistryCheck {
                         if ($bootExecStr -match $cmd) {
 
                             Add-Result -Category "Registry" -Title "BootExecute可疑命令" `
-
                                 -Detail "BootExecute: $($bootExec -join '; ')`n包含可疑命令: $cmd`nBootExecute在系统启动时执行，银狐可用于持久化" `
-
                                 -RiskLevel "Critical" -Location $bootExecPath `
-
                                 -Remediation "将BootExecute恢复为默认值: autocheck autochk *" `
-
                                 -CanBeFixed $true -FixType "RestoreBootExecute" -FixRegPath $bootExecPath -FixRegName "BootExecute"
 
                             break
@@ -2509,13 +2466,9 @@ function Invoke-RegistryCheck {
                 if ($legit.IsLegit) { return }
 
                 Add-Result -Category "Registry" -Title "AppCertDlls可疑DLL" `
-
                     -Detail "键: $appCertPath`n值: $($_.Name) = $dllPath`nAppCertDlls 中的 DLL 会被所有调用证书相关 API 的进程加载，是高级持久化注入点" `
-
                     -RiskLevel "Critical" -Location $appCertPath `
-
                     -Remediation "删除可疑的 AppCertDlls 条目" `
-
                     -CanBeFixed $true -FixType "RemoveRegProp" -FixRegPath $appCertPath -FixRegName $_.Name
 
             }
@@ -2805,13 +2758,9 @@ function Invoke-TaskCheck {
                     
 
                     Add-Result -Category "Tasks" -Title "可疑计划任务: $taskPath$taskName" `
-
                         -Detail "$execDetail`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                         -RiskLevel $riskLevel -Location "计划任务: $taskPath$taskName" `
-
                         -Remediation "禁用并删除该计划任务" `
-
                         -CanBeFixed $true -FixType "UnregisterTask" -FixTaskName $taskName -FixTaskPath $taskPath
 
                 }
@@ -3049,13 +2998,9 @@ function Invoke-ServiceCheck {
                 
 
                 Add-Result -Category "Services" -Title "可疑服务: $($svc.Name)" `
-
                     -Detail "显示名: $($svc.DisplayName)`n路径: $pathName`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                     -RiskLevel $riskLevel -Location "服务: $($svc.Name)" `
-
                     -Remediation "停止并禁用该服务，删除对应文件" `
-
                     -CanBeFixed $true -FixType "StopAndDisableService" -FixServiceName $svc.Name
 
             }
@@ -3113,13 +3058,9 @@ function Invoke-ServiceCheck {
             if ($legit.IsLegit) { return }
 
             Add-Result -Category "Services" -Title "服务DLL劫持: $svcName" `
-
                 -Detail "服务: $svcName`nServiceDll: $serviceDll`n该svchost托管服务的ServiceDll不在系统目录，可能是银狐替换的持久化DLL" `
-
                 -RiskLevel "Critical" -Location $paramPath `
-
                 -Remediation "将ServiceDll恢复为原始System32路径，或删除恶意DLL" `
-
                 -CanBeFixed $false
 
         }
@@ -3289,13 +3230,9 @@ function Invoke-ProcessCheck {
                         
 
                         Add-Result -Category "Processes" -Title "DLL侧加载: $($proc.ProcessName)" `
-
                             -Detail "DLL: $($mod.FileName)`n进程: $($proc.ProcessName) (PID: $($proc.Id))`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                             -RiskLevel $riskLevel -Location "进程: $($proc.ProcessName), DLL: $($mod.FileName)" `
-
                             -Remediation "终止进程，检查DLL和同目录EXE是否为恶意文件" `
-
                             -CanBeFixed $true -FixType "StopProcess" -FixPid $proc.Id
 
                     }
@@ -3349,13 +3286,9 @@ function Invoke-ProcessCheck {
                 $execPath -notmatch 'node_modules|resources|locales|lib|bin|src|pkg|share|include|Programs|AppData|Microsoft|NVIDIA|Intel') {
 
                 Add-Result -Category "Processes" -Title "6层随机目录进程" `
-
                     -Detail "进程: $($wmiProc.Name) (PID: $($wmiProc.ProcessId))`n路径: $execPath`n这是银狐2026新变种的典型特征" `
-
                     -RiskLevel "Critical" -Location "进程: $execPath" `
-
                     -Remediation "立即终止进程并删除整个随机目录" `
-
                     -CanBeFixed $true -FixType "StopProcess" -FixPid $wmiProc.ProcessId
 
                 continue
@@ -3369,13 +3302,9 @@ function Invoke-ProcessCheck {
                 $execPath -notmatch 'node_modules|resources|locales|lib|bin|src|pkg|share|include|Programs|AppData|Microsoft|NVIDIA|Intel') {
 
                 Add-Result -Category "Processes" -Title "6层随机目录进程（混合大小写）" `
-
                     -Detail "进程: $($wmiProc.Name) (PID: $($wmiProc.ProcessId))`n路径: $execPath`n检测到混合大小写随机目录，可能是银狐变种" `
-
                     -RiskLevel "High" -Location "进程: $execPath" `
-
                     -Remediation "立即终止进程并检查目录" `
-
                     -CanBeFixed $true -FixType "StopProcess" -FixPid $wmiProc.ProcessId
 
                 continue
@@ -3391,13 +3320,9 @@ function Invoke-ProcessCheck {
                 if (-not (Test-IsLegitimatePath $execPath).IsLegit) {
 
                     Add-Result -Category "Processes" -Title "IE目录可疑进程" `
-
                         -Detail "进程: $($wmiProc.Name) (PID: $($wmiProc.ProcessId))`n路径: $execPath`n银狐常在IE目录释放恶意文件" `
-
                         -RiskLevel "High" -Location "进程: $execPath" `
-
                         -Remediation "终止进程，检查IE目录下可疑文件" `
-
                         -CanBeFixed $true -FixType "StopProcess" -FixPid $wmiProc.ProcessId
 
                 }
@@ -3473,13 +3398,9 @@ function Invoke-ProcessCheck {
                         $detailText = "PID: $($tp.Id)`n路径: $execPath`n$targetName 不在标准系统目录(System32/SysWOW64/Windows)"
 
                         Add-Result -Category "Processes" -Title "注入目标异常: $targetName" `
-
                             -Detail $detailText `
-
                             -RiskLevel "Critical" -Location "进程: $targetName (PID: $($tp.Id))" `
-
                             -Remediation "该进程可能已被银狐木马替换/注入，建议终止并排查" `
-
                             -CanBeFixed $true -FixType "StopProcess" -FixPid $tp.Id
 
                     }
@@ -3582,13 +3503,9 @@ function Invoke-FileCheck {
                     if ($anySignedExe) { return }
 
                     Add-Result -Category "Files" -Title "银狐6层随机目录" `
-
                         -Detail "路径: $($_.FullName)`n随机子目录数: $randomCount`n含随机EXE: $($hasRandomExe.Name -join ', ')`n银狐2026变种典型持久化结构" `
-
                         -RiskLevel "Critical" -Location $_.FullName `
-
                         -Remediation "隔离整个随机目录" `
-
                         -CanBeFixed $true -FixType "QuarantineDir" -FixFilePath $_.FullName
 
                 }
@@ -3888,13 +3805,9 @@ function Invoke-FileCheck {
                     if ($matchCount -ge 3) {
 
                         Add-Result -Category "Files" -Title "BAT守护脚本" `
-
                             -Detail "文件: $($bat.FullName)`n匹配关键词($matchCount): $($matchedKeywords -join ', ')`n银狐使用BAT脚本反复拉起木马进程" `
-
                             -RiskLevel "Critical" -Location $bat.FullName `
-
                             -Remediation "隔离该脚本" `
-
                             -CanBeFixed $true -FixType "QuarantineFile" -FixFilePath $bat.FullName
 
                     }
@@ -3915,13 +3828,9 @@ function Invoke-FileCheck {
                             # 混淆密度异常但未触发关键词规则 → 单独报告
 
                             Add-Result -Category "Files" -Title "BAT混淆脚本" `
-
                                 -Detail "文件: $($bat.FullName)`n混淆符号密度: $([math]::Round($obfuscRatio*100,1))% (^x$caretCount, %x$percentCount)`n银狐常用BAT混淆手段绕过检测" `
-
                                 -RiskLevel "High" -Location $bat.FullName `
-
                                 -Remediation "隔离该脚本" `
-
                                 -CanBeFixed $true -FixType "QuarantineFile" -FixFilePath $bat.FullName
 
                         }
@@ -3979,13 +3888,9 @@ function Invoke-FileCheck {
                 if ($suspiciousExes) {
 
                     Add-Result -Category "Files" -Title "Windows隐藏目录可疑文件" `
-
                         -Detail "目录: $($_.FullName)`n可疑文件: $($suspiciousExes.Name -join ', ')`n银狐常在Windows目录创建隐藏文件夹存放木马" `
-
                         -RiskLevel "High" -Location $_.FullName `
-
                         -Remediation "检查文件是否合法，确认恶意后隔离" `
-
                         -CanBeFixed $true -FixType "QuarantineDir" -FixFilePath $_.FullName
 
                 }
@@ -4155,13 +4060,9 @@ function Invoke-FileCheck {
                     $riskLevel = if ($suspicionScore -ge 5) { "High" } else { "Medium" }
 
                     Add-Result -Category "Files" -Title "Startup目录可疑文件: $($_.Name)" `
-
                         -Detail "文件: $($_.FullName)`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                         -RiskLevel $riskLevel -Location $_.FullName `
-
                         -Remediation "检查该文件是否合法，确认后隔离" `
-
                         -CanBeFixed $true -FixType "QuarantineFile" -FixFilePath $_.FullName
 
                 }
@@ -4283,13 +4184,9 @@ function Invoke-NetworkCheck {
                 $resolvedIP = $dnsCacheDomains[$domainLower]
 
                 Add-Result -Category "DNS" -Title "DNS缓存命中银狐C2域名" `
-
                     -Detail "域名: $domain`n解析IP: $resolvedIP`n该域名为银狐木马家族已确认C2域名" `
-
                     -RiskLevel "Critical" -Location "DNS缓存: $domain" `
-
                     -Remediation "立即封禁该域名及解析IP($resolvedIP)，检查发起DNS请求的进程" `
-
                     -CanBeFixed $false
 
                 continue
@@ -4307,13 +4204,9 @@ function Invoke-NetworkCheck {
                         $resolvedIP = $dnsCacheDomains[$cachedDomain]
 
                         Add-Result -Category "DNS" -Title "DNS缓存命中FreeDNS动态DNS子域" `
-
                             -Detail "域名: $cachedDomain`n解析IP: $resolvedIP`n该域名为FreeDNS(afraid.org)子域，银狐/XRed木马通过FreeDNS动态DNS获取C2服务器IP" `
-
                             -RiskLevel "High" -Location "DNS缓存: $cachedDomain" `
-
                             -Remediation "封禁该子域及解析IP($resolvedIP)，检查发起DNS请求的进程是否为恶意" `
-
                             -CanBeFixed $false
 
                     }
@@ -4423,13 +4316,9 @@ function Invoke-NetworkCheck {
 
 
                     Add-Result -Category "Network" -Title "可疑外联(Gh0st端口)" `
-
                         -Detail "进程: $procName (PID: $procId)`n远程: ${remoteIP}:${remotePort}`n命令行: $cmdLine`n端口$remotePort为Gh0st远控常见端口" `
-
                         -RiskLevel "Critical" -Location "进程: $procName -> ${remoteIP}:${remotePort}" `
-
                         -Remediation "阻断连接，终止进程，封禁IP" `
-
                         -CanBeFixed $true -FixType "StopProcess" -FixPid $procId
 
                     continue
@@ -4503,13 +4392,9 @@ function Invoke-NetworkCheck {
 
 
                         Add-Result -Category "DNS" -Title "C2动态DNS API请求: $($c2Pattern.Desc)" `
-
                             -Detail "进程: $procName (PID: $procId)`n命令行: $cmdLine`n匹配模式: $($c2Pattern.Pattern)`n银狐通过FreeDNS等动态DNS服务获取C2服务器IP，无需硬编码域名" `
-
                             -RiskLevel $c2Pattern.Risk -Location "进程: $procName (PID: $procId)" `
-
                             -Remediation "立即终止该进程，封禁freedns.afraid.org域名，排查感染来源" `
-
                             -CanBeFixed $true -FixType "StopProcess" -FixPid $procId
 
                     }
@@ -4567,13 +4452,9 @@ function Invoke-NetworkCheck {
                     $cmdLine = if ($pidToCmdLine.ContainsKey($procId)) { $pidToCmdLine[$procId] } else { "" }
 
                     Add-Result -Category "Network" -Title "C2 IP外联（已知银狐C2）" `
-
                         -Detail "进程: $procName (PID: $procId)`n远程: ${remoteIP}:${remotePort}`n该IP为银狐已知C2地址`n命令行: $cmdLine" `
-
                         -RiskLevel "Critical" -Location "进程: $procName -> ${remoteIP}:${remotePort}" `
-
                         -Remediation "立即隔离主机，阻断该IP，排查感染途径" `
-
                         -CanBeFixed $false
 
                 } catch {
@@ -4835,13 +4716,9 @@ function Invoke-WmiCheck {
 
 
                     Add-Result -Category "Registry" -Title "WMI持久化: $filterName" `
-
                         -Detail "过滤器: $filterName`n查询: $($query.Substring(0, [Math]::Min(100, $query.Length)))$consumerInfo$cmdInfo`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                         -RiskLevel $riskLevel -Location "WMI EventSubscription" `
-
                         -Remediation "删除WMI事件订阅（过滤器+消费者+绑定）" `
-
                         -CanBeFixed $false  # WMI清理需要特殊处理，暂不自动修复
 
                 }
@@ -4882,13 +4759,9 @@ function Invoke-WmiCheck {
                             if ($val -match 'powershell|cmd\.exe|wscript|cscript|CreateObject|WScript\.Shell') {
 
                                 Add-Result -Category "Registry" -Title "WMI脚本存储" `
-
                                     -Detail "命名空间: root/cimv2/$($cls.Name)`n属性: $($prop.Name)`n内容: $($val.Substring(0, [Math]::Min(200, $val.Length)))`n银狐可能将恶意脚本存储在WMI属性中实现无文件持久化" `
-
                                     -RiskLevel "Critical" -Location "WMI: root/cimv2/$($cls.Name)" `
-
                                     -Remediation "清除WMI属性中的恶意脚本内容" `
-
                                     -CanBeFixed $false
 
                             }
@@ -4992,13 +4865,9 @@ function Invoke-HostsCheck {
                 if ($Script:MaliciousDomainSet.Contains($domain)) {
 
                     Add-Result -Category "Hosts" -Title "Hosts劫持: C2域名重定向" `
-
                         -Detail "hosts 文件将 $domain 重定向到 $ip`n该域名是已知银狐C2地址，重定向可能用于流量劫持或绕过DNS检测" `
-
                         -RiskLevel "Critical" -Location $hostsPath `
-
                         -Remediation "删除hosts文件中的该行，恢复DNS正常解析" `
-
                         -CanBeFixed $false
 
                     continue
@@ -5020,13 +4889,9 @@ function Invoke-HostsCheck {
                     if ($domain -match '\.(local|lan|internal|test|dev|corp|home)$') { continue }
 
                     Add-Result -Category "Hosts" -Title "Hosts可疑重定向" `
-
                         -Detail "hosts 文件将 $domain 重定向到 $ip`n非标准的外部IP重定向，可能是流量劫持" `
-
                         -RiskLevel "Medium" -Location $hostsPath `
-
                         -Remediation "检查该重定向是否合法，如非预期则删除" `
-
                         -CanBeFixed $false
 
                 }
@@ -5228,13 +5093,9 @@ function Invoke-BitsCheck {
                 $filePaths = ($fileList | ForEach-Object { $_.LocalName }) -join "`n"
 
                 Add-Result -Category "Bits" -Title "可疑BITS任务: $displayName" `
-
                     -Detail "任务: $displayName (ID: $($job.JobId))`nOwner: $owner`n状态: $($job.JobState)`n文件: $filePaths`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                     -RiskLevel $riskLevel -Location "BITS任务" `
-
                     -Remediation "使用 Remove-BitsTransfer 删除可疑任务" `
-
                     -CanBeFixed $false
 
             }
@@ -5372,13 +5233,9 @@ function Invoke-PipeCheck {
                 $procInfo = if ($ownerProc) { "$($ownerProc.ProcessName) (PID: $($ownerProc.Id))" } else { "未知" }
 
                 Add-Result -Category "Pipes" -Title "可疑命名管道: $pipeName" `
-
                     -Detail "管道: \\.\pipe\$pipeName`n拥有进程: $procInfo`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
-
                     -RiskLevel $riskLevel -Location "\\.\pipe\$pipeName" `
-
                     -Remediation "检查该管道的拥有进程是否合法" `
-
                     -CanBeFixed $false
 
             }
