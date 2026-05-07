@@ -574,7 +574,17 @@ $Script:WinServiceNameSet = [System.Collections.Generic.HashSet[string]]::new([S
 
     "WSService","wscsvc","wuauserv","WudfSvc","XblAuthManager","XblGameSave",
 
-    "XboxGipSvc","XboxNetApiSvc"
+    "XboxGipSvc","XboxNetApiSvc",
+    # Intel 驱动服务
+    "efwd","IntelEFW","igfxCUIService","IntelAudioService","IntelCpHDCPSvc",
+    "IntelCpHeciSvc","cphs","jhi_service","LMS","IAStorDataMgrSvc",
+    "ThunderboltService","Intel(R) TPM Provisioning Service",
+    # ESET 服务
+    "ekrn","egui","eServiceHost","epfwwfp","ekbdflt",
+    # NVIDIA 服务
+    "NVDisplay.ContainerLocalSystem","NvContainerLocalSystem","NVWMI",
+    # AMD 服务
+    "amdkmdag","amdwddmg","amdfendr"
 
 ) | ForEach-Object { $Script:WinServiceNameSet.Add($_) | Out-Null }
 
@@ -784,7 +794,10 @@ $Script:KnownSystemPipes = [System.Collections.Generic.HashSet[string]]::new([Sy
 
     "Srvsvc","Wkssvc","Browser","Netlogon","NtControlPipe",
 
-    "WPSCloudSvr","wpscloudsvr","wpscenter"
+    "WPSCloudSvr","wpscloudsvr","wpscenter",
+    # Windows 系统管道
+    "InitShutdown","initshutdown","TermSrv_API_service","TSVCPIPE",
+    "Winsock2\CatalogChangeListener","winlogonrpc"
 
 ) | ForEach-Object { $Script:KnownSystemPipes.Add($_) | Out-Null }
 
@@ -3566,6 +3579,13 @@ function Invoke-FileCheck {
                 
 
                 if ($randomCount -ge 3 -and $hasRandomExe -and -not $hasExe.Where({ -not (Test-IsRandomName $_.BaseName) -and $_.BaseName -notmatch '^(uninstall|uninst|setup|install)' })) {
+
+                    # 签名校验：目录中任一 EXE 有合法厂商签名则跳过（防 ESET/Tabby/Warp 等误报）
+                    $anySignedExe = $false
+                    foreach ($exe in $hasExe) {
+                        if ((Test-IsLegitimatePath $exe.FullName).IsLegit) { $anySignedExe = $true; break }
+                    }
+                    if ($anySignedExe) { return }
 
                     Add-Result -Category "Files" -Title "银狐6层随机目录" `
 
