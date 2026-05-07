@@ -1,0 +1,20 @@
+# PowerShell build artifacts
+*.exe
+*.pdb
+
+# Generated HTML reports
+*.html
+
+# Debug / test logs
+*.log
+
+# Test outputs
+test-output/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
