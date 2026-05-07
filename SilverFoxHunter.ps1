@@ -1450,25 +1450,17 @@ function Write-Status([string]$Module, [string]$Status, [string]$Detail="") {
 
 function Get-CimProcessCache {
 
-    # 缓存WMI进程查询结果，避免重复调用，加超时和分批过滤
+    # 缓存WMI进程查询结果，避免重复调用
+    # 注: New-CimSession 不支持 -OperationTimeoutSec，直接使用 Get-CimInstance 加超时
 
     if (-not $Script:WmiProcessCache) {
 
         try {
 
-            # 创建带超时的CIM会话（10秒）
-
-            $cimSession = New-CimSession -OperationTimeoutSec 10 -ErrorAction Stop
-
-            # 过滤空名称进程，避免无效条目
-
-            $Script:WmiProcessCache = Get-CimInstance -CimSession $cimSession `
-
-                -ClassName Win32_Process -ErrorAction SilentlyContinue `
-
-                -Filter "Name IS NOT NULL" # 过滤空名称进程
-
-            Remove-CimSession $cimSession
+            $Script:WmiProcessCache = Get-CimInstance -ClassName Win32_Process `
+                -ErrorAction SilentlyContinue `
+                -Filter "Name IS NOT NULL" `
+                -OperationTimeoutSec 10
 
         } catch {
 
@@ -3072,7 +3064,9 @@ function Invoke-ServiceCheck {
 
     } catch {
 
-        Write-Status "服务" "警告" "无法获取服务列表"
+        Write-Log -Message "服务检测失败: $($_.Exception.Message)" -Level "ERROR" -Module "ServiceCheck"
+        Update-ErrorStats -Category "Detection"
+        Write-Status "服务" "警告" "无法获取服务列表: $($_.Exception.Message)"
 
     }
 
