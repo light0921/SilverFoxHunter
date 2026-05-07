@@ -1,5 +1,35 @@
 # 更新日志
 
+## [v2.9.2] - 2026-05-07
+
+### Bug 修复
+- **[严重] Task 多 Action 漏检** — 签名验证通过第一个 Action 后 `break` 退出整个 Action 循环，若 Task 有多个 Action（第一个合法、后续恶意），恶意 Action 永不被检测。改为 `continue` 仅跳过当前 Action
+- **[中] HTML 转义顺序** — 手动 `-replace` 在输入已含 `&amp;` 时产生 `&amp;amp;` 双转义。改为 `[System.Net.WebUtility]::HtmlEncode()` 系统调用
+
+### 性能优化
+- **Task 检测签名缓存** — Action 循环内对同一 `$execPath` 重复调用 4 次 `Test-IsLegitimatePath`（`Get-AuthenticodeSignature` CryptoAPI 开销最高），改为循环开始时一次调用缓存为 `$cachedLegit` 复用
+- **进程检测单次枚举** — `Get-Process -Name $baseName` 在 9 个注入目标名循环中每次枚举进程表，改为一次 `Get-Process` + `Where-Object` 客户端过滤
+- **WMI 超时补全** — `Get-CimInstance Win32_Service` 缺 `-OperationTimeoutSec`（唯一遗漏的 CIM 调用），WMI 损坏时无限卡死
+
+### 检测逻辑改进
+- **风险评分统一** — Process/BITS/Pipe/Startup 模块评分→风险等级映射统一为 3 级（ge8=Critical, ge5=High, ge3=Medium），与原 Registry/Service 等模块一致
+- **BAT 阈值放宽** — 跳过阈值从 500KB→2MB，防止含 base64 payload 的 BAT 被误跳过
+- **熵检测样本增大** — 前 2048 字节→8192 字节，覆盖 PE 头后的加密载荷区域
+- **服务检测死逻辑移除** — `$svc.Name -in $Script:ConfirmedRunNames` 使用 Run 键名单检查服务名（仅含 TTruespanl），永远为 `$false`，已注释
+
+### 代码质量
+- **死代码清理** — 删除未调用的 `Get-EnrichedFileDetail` 函数（20 行）和未使用的 `LegitimateTaskPathSet` HashSet
+- **COM 对象释放** — `$Script:WshShell = $null` 前增加 `ReleaseComObject()` 调用
+- **重复管理员检查移除** — Main 函数内冗余管理员权限检查（脚本头部已强制 exit 1），死代码已删除
+- **ErrorStats 补全** — Invoke-FileCheck 和 Invoke-PipeCheck 异常捕获块增加 `Update-ErrorStats`，确保报告错误计数准确
+
+### 已知待优化（延后）
+- FileCheck 目录遍历合并（AppData/ProgramData 被 3 次递归枚举）
+- Invoke-FileCheck（654行）/ Invoke-RegistryCheck（715行）函数拆分
+- ```.NET EnumerateFiles``` 样板代码提取为公共函数
+
+---
+
 ## [v2.9.1] - 2026-05-07
 
 ### 误报修复（严重）

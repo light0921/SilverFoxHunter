@@ -2,7 +2,7 @@
 
 .SYNOPSIS
 
-    银狐木马(SilverFox)检测查杀工具 v2.9.1（纯命令行版）
+    银狐木马(SilverFox)检测查杀工具 v2.9.2（纯命令行版）
 
 .DESCRIPTION
 
@@ -1800,45 +1800,9 @@ function ConvertTo-HtmlSafe {
 
     if ([string]::IsNullOrEmpty($InputString)) { return "" }
 
-    # 完���的HTML转义：处理所有特殊字符
-
-    $result = $InputString
-
-    $result = $result -replace '&', '&amp;'
-
-    $result = $result -replace '<', '&lt;'
-
-    $result = $result -replace '>', '&gt;'
-
-    $result = $result -replace '"', '&quot;'
-
-    $result = $result -replace "'", '&#39;'
-
-    # 额外处理：换行符和制表符
-
-    $result = $result -replace "`r`n", '<br/>'
-
-    $result = $result -replace "`n", '<br/>'
-
-    $result = $result -replace "`r", '<br/>'
-
-    $result = $result -replace "`t", '&nbsp;&nbsp;&nbsp;&nbsp;'
-
-    # 处理Unicode控制字符
-
-    $result = $result -replace '[\x00-\x1F\x7F]', ''
-
-    return $result
+    return [System.Net.WebUtility]::HtmlEncode($InputString)
 
 }
-
-
-
-# ============================================================
-
-# 模块1：注册表启动项检测
-
-# ============================================================
 
 function Invoke-RegistryCheck {
 
@@ -2619,6 +2583,8 @@ function Invoke-TaskCheck {
 
                         $taskArgs = $action.Arguments
 
+                        $cachedLegit = Test-IsLegitimatePath $execPath
+
                         $execDetail += "执行: $execPath $taskArgs; "
 
                         
@@ -2731,9 +2697,7 @@ function Invoke-TaskCheck {
 
                         if ($legit.IsLegit) {
 
-                            $suspicionScore = 0
-
-                            break
+                            continue
 
                         } else {
 
@@ -2819,7 +2783,7 @@ function Invoke-ServiceCheck {
 
     try {
 
-        $services = Get-CimInstance Win32_Service -ErrorAction SilentlyContinue | Where-Object {
+        $services = Get-CimInstance Win32_Service -ErrorAction SilentlyContinue -OperationTimeoutSec 15 | Where-Object {
 
             $_.State -eq "Running"
 
@@ -2845,7 +2809,7 @@ function Invoke-ServiceCheck {
 
             # 不再跳过非随机名称的服务 — 直接进入路径/签名评分
 
-            $isKnownMalicious = $svc.Name -in $Script:ConfirmedRunNames
+            # $isKnownMalicious = $svc.Name -in $Script:ConfirmedRunNames  # 已移除:ConfirmedRunNames仅含Run键名
 
 
 
@@ -3239,7 +3203,7 @@ function Invoke-ProcessCheck {
 
                         
 
-                        $riskLevel = if ($suspicionScore -ge 7) { "Critical" } else { "High" }
+                        $riskLevel = if ($suspicionScore -ge 8) { "Critical" } elseif ($suspicionScore -ge 5) { "High" } else { "Medium" }
 
                         
 
@@ -3371,15 +3335,15 @@ function Invoke-ProcessCheck {
 
 
 
+        # 优化：一次获取所有进程，避免 9 次独立 Get-Process 调用（每次遍历整个进程表）
+        $allProcsForInject = Get-Process -ErrorAction SilentlyContinue
+
         foreach ($targetName in $Script:SilverFoxInjectTargets) {
 
             $baseName = [System.IO.Path]::GetFileNameWithoutExtension($targetName)
 
-            $targetProcs = $null
-
-            try { $targetProcs = Get-Process -Name $baseName -ErrorAction SilentlyContinue } catch { continue }
-
-            if (-not $targetProcs) { continue }
+            # 优化：使用预获取的全进程列表过滤，避免每次循环调用 Get-Process
+            $targetProcs = $allProcsForInject | Where-Object { $_.ProcessName -eq $baseName }
 
 
 
@@ -3645,7 +3609,7 @@ function Invoke-FileCheck {
                 try {
                     $bytes = [System.IO.File]::ReadAllBytes($dat.FullName)
                     if ($bytes.Length -gt 1000) {
-                        $sampleSize = 2048
+                        $sampleSize = 8192  # 从2048增至8192，覆盖PE头后的加密载荷
                         $sampleBytes = if ($bytes.Length -gt $sampleSize) { $bytes[0..($sampleSize-1)] } else { $bytes }
                         $freq = New-Object 'System.Collections.Generic.Dictionary[byte,int]'
                         foreach ($b in $sampleBytes) { if ($freq.ContainsKey($b)) { $freq[$b]++ } else { $freq[$b] = 1 } }
@@ -3784,7 +3748,7 @@ function Invoke-FileCheck {
                 try {
 
                     # 跳过大于 500KB 的 BAT（银狐守护脚本通常很小）
-                    if ($bat.Length -gt 500KB) { continue }
+                    if ($bat.Length -gt 2MB) { continue }  # 提高阈值从500KB到2MB，防止base64 payload BAT被跳过
 
                     $content = Get-Content $bat.FullName -ErrorAction SilentlyContinue -TotalCount 30
 
@@ -4029,7 +3993,8 @@ function Invoke-FileCheck {
 
                                 Write-Log -Message "WScript.Shell COM 创建失败，LNK 解析不可用: $($_.Exception.Message)" -Level "WARN" -Module "FileCheck"
 
-                                $Script:WshShell = $null
+                                if ($Script:WshShell) { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Script:WshShell) | Out-Null }
+    $Script:WshShell = $null
 
                             }
 
@@ -4071,7 +4036,7 @@ function Invoke-FileCheck {
 
                 if ($suspicionScore -ge 3) {
 
-                    $riskLevel = if ($suspicionScore -ge 5) { "High" } else { "Medium" }
+                    $riskLevel = if ($suspicionScore -ge 8) { "Critical" } elseif ($suspicionScore -ge 5) { "High" } else { "Medium" }
 
                     Add-Result -Category "Files" -Title "Startup目录可疑文件: $($_.Name)" `
                         -Detail "文件: $($_.FullName)`n可疑度: $suspicionScore | 原因: $($reasons -join '; ')" `
@@ -5102,7 +5067,7 @@ function Invoke-BitsCheck {
 
             if ($suspicionScore -ge 3) {
 
-                $riskLevel = if ($suspicionScore -ge 5) { "High" } else { "Medium" }
+                $riskLevel = if ($suspicionScore -ge 8) { "Critical" } elseif ($suspicionScore -ge 5) { "High" } else { "Medium" }
 
                 $filePaths = ($fileList | ForEach-Object { $_.LocalName }) -join "`n"
 
@@ -5242,7 +5207,7 @@ function Invoke-PipeCheck {
 
             if ($suspicionScore -ge 3) {
 
-                $riskLevel = if ($suspicionScore -ge 5) { "High" } else { "Medium" }
+                $riskLevel = if ($suspicionScore -ge 8) { "Critical" } elseif ($suspicionScore -ge 5) { "High" } else { "Medium" }
 
                 $procInfo = if ($ownerProc) { "$($ownerProc.ProcessName) (PID: $($ownerProc.Id))" } else { "未知" }
 
@@ -6162,7 +6127,7 @@ body{font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:#0a0e27;colo
 
 <h1>银狐木马检测报告</h1>
 
-<div class="subtitle">SilverFox (Silver Fox) Trojan Detection Report v2.9.1</div>
+<div class="subtitle">SilverFox (Silver Fox) Trojan Detection Report v2.9.2</div>
 
 <div class="meta">
 
@@ -6474,7 +6439,7 @@ $recommendationsHtml
 
 </div>
 
-<div class="footer"><p>银狐木马检测查杀工具 v2.9.1 | 生成时间：$($Script:ScanTime)</p><p>本工具仅供安全检测与应急响应使用，清理操作请谨慎执行</p></div>
+<div class="footer"><p>银狐木马检测查杀工具 v2.9.2 | 生成时间：$($Script:ScanTime)</p><p>本工具仅供安全检测与应急响应使用，清理操作请谨慎执行</p></div>
 
 </div>
 
@@ -6534,7 +6499,7 @@ function Main {
 
     Write-Host "  =======================================================" -ForegroundColor Cyan
 
-    Write-Host "  |  银狐木马检测查杀工具 v2.9.1  (命令行版)           |" -ForegroundColor Cyan
+    Write-Host "  |  银狐木马检测查杀工具 v2.9.2  (命令行版)           |" -ForegroundColor Cyan
 
     Write-Host "  |  SilverFox Trojan Detection & Removal               |" -ForegroundColor Cyan
 
